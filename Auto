@@ -1,0 +1,344 @@
+[14/05, 11:55 am] Heli: //Using Terraform for Zero-Downtime Deployment
+
+
+# -----------------------------------
+# PROVIDER
+# -----------------------------------
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# -----------------------------------
+# DEFAULT VPC + SUBNETS
+# -----------------------------------
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# -----------------------------------
+# SECURITY GROUP - ALB
+# -----------------------------------
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Allow HTTP traffic to ALB"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------------
+# SECURITY GROUP - EC2
+# -----------------------------------
+resource "aws_security_group" "web_sg" {
+  name        = "web-sg"
+  description = "Allow HTTP from ALB and SSH"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------------
+# AMI VARIABLE (FOR UPGRADE SIMULATION)
+# -----------------------------------
+variable "ami_id" {
+  default = "ami-01b40e1bcccae197a"  // change here ami 
+}
+
+# -----------------------------------
+# EC2 INSTANCES (2 INSTANCES + LIFECYCLE RULE)
+# -----------------------------------
+resource "aws_instance" "web" {
+  count                  = 2
+  ami                    = var.ami_id
+  instance_type          = "t3.micro"
+  key_name               = "webserver"
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  user_data = <<-EOF
+#!/bin/bash
+yum install -y httpd
+systemctl enable httpd
+systemctl start httpd
+echo "<h1>Hello from $(hostname)</h1>" > /var/www/html/index.html
+EOF
+
+  tags = {
+    Name = "WebServer-${count.index + 1}"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# -----------------------------------
+# TARGET GROUP
+# -----------------------------------
+resource "aws_lb_target_group" "tg" {
+  name     = "target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.default.id
+
+  health_check {
+    path = "/"
+    port = "traffic-port"
+  }
+}
+
+# -----------------------------------
+# APPLICATION LOAD BALANCER
+# -----------------------------------
+resource "aws_lb" "alb" {
+  name               = "my-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.default.ids
+
+  tags = {
+    Name = "MyALB"
+  }
+}
+
+# -----------------------------------
+# LISTENER
+# -----------------------------------
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# -----------------------------------
+# ATTACH INSTANCES TO TARGET GROUP
+# -----------------------------------
+resource "aws_lb_target_group_attachment" "attach" {
+  count            = 2
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web[count.index].id
+  port             = 80
+}
+
+# -----------------------------------
+# OUTPUTS
+# -----------------------------------
+output "load_balancer_dns" {
+  value = aws_lb.alb.dns_name
+}
+
+output "instance_public_ips" {
+  value = aws_instance.web[*].public_ip
+}
+[14/05, 11:55 am] Heli: //Scaling Infrastructure using Terraform
+
+# -----------------------------------
+# 1. PROVIDER
+# -----------------------------------
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# -----------------------------------
+# 2. DEFAULT VPC + SUBNETS
+# -----------------------------------
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# -----------------------------------
+# 3. SECURITY GROUP - ALB
+# -----------------------------------
+resource "aws_security_group" "alb_sg" {
+  name   = "alb-sg-simple"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------------
+# 4. SECURITY GROUP - EC2
+# -----------------------------------
+resource "aws_security_group" "web_sg" {
+  name   = "web-sg-simple"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------------
+# 5. TARGET GROUP
+# -----------------------------------
+resource "aws_lb_target_group" "tg" {
+  name     = "simple-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.default.id
+
+  health_check {
+    path = "/"
+  }
+}
+
+# -----------------------------------
+# 6. LOAD BALANCER
+# -----------------------------------
+resource "aws_lb" "alb" {
+  name               = "simple-alb"
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.default.ids
+}
+
+# -----------------------------------
+# 7. LISTENER
+# -----------------------------------
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# -----------------------------------
+# 8. LAUNCH TEMPLATE
+# -----------------------------------
+resource "aws_launch_template" "lt" {
+  name_prefix  = "simple-lt"
+  image_id     = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+  key_name      = "webserver"
+
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  user_data = base64encode(<<-EOF
+#!/bin/bash
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>ASG Instance $(hostname)</h1>" > /var/www/html/index.html
+EOF
+  )
+}
+
+# -----------------------------------
+# 9. AUTO SCALING GROUP
+# -----------------------------------
+resource "aws_autoscaling_group" "asg" {
+  name                = "simple-asg"
+  min_size            = 1
+  max_size            = 3
+  desired_capacity    = 2
+  vpc_zone_identifier = data.aws_subnets.default.ids
+
+  launch_template {
+    id      = aws_launch_template.lt.id
+    version = "$Latest"
+  }
+
+  target_group_arns = [aws_lb_target_group.tg.arn]
+
+  health_check_type = "ELB"
+}
+
+# -----------------------------------
+# 10. SCALING POLICY (SIMPLE CPU BASED MANUAL TRIGGER)
+# -----------------------------------
+resource "aws_autoscaling_policy" "scale_out" {
+  name                   = "scale-out"
+  autoscaling_group_name = aws_autoscaling_group.asg.name
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+}
+
+resource "aws_autoscaling_policy" "scale_in" {
+  name                   = "scale-in"
+  autoscaling_group_name = aws_autoscaling_group.asg.name
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+}
+
+# -----------------------------------
+# OUTPUT
+# -----------------------------------
+output "alb_dns" {
+  value = aws_lb.alb.dns_name
+}
