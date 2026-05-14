@@ -1,0 +1,1337 @@
+													Devops Terraform + AWS 
+
+
+----------------------------------------------------Recipe 12:----------------------------------------------------------------
+
+
+
+Recipe 12: Setting up Terraform with AWS
+Objective
+Configure Terraform on your system and connect it with an AWS account.
+Assignment Task
+Install Terraform, configure AWS credentials, and verify Terraform can communicate with AWS.
+Guidelines / Steps
+1. Create an AWS account if not already available.
+2. Install the AWS CLI on your machine.
+3. Configure AWS CLI using:
+o Access Key
+o Secret Access Key
+o Default Region
+4. Install Terraform on your system.
+5. Verify installation using:
+o terraform -version
+6. Create a project directory:
+terraform-aws-setup
+7. Create a Terraform configuration file (main.tf).
+8. Configure the AWS provider in the Terraform file.
+9. Initialize Terraform using:
+terraform init
+10. Validate configuration:
+terraform validate
+Expected Outcome
+Terraform should successfully initialize and connect to AWS.
+
+
+
+
+steps:-
+------ from google install aws cli first ------
+ 
+		first root login 
+		after go to iam
+		and make user and create password and give permission 3rd
+		after login in to this account
+		and create access key
+		
+		and aws configure to add all details
+		AWS Access Key ID: XXXXX
+		AWS Secret Access Key: XXXXX
+		Default region name: ap-south-1
+		Default output format: json
+		
+		after run to verify key added 
+		run this command:-   aws sts get-caller-identity
+		
+		
+		and verify terrform installed or not and aws version also
+		then
+		
+		directory create and enter 
+		mkdir terraform-aws-setup
+		cd terraform-aws-setup
+		
+		
+main.tf:-
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+
+run:- terraform init && terraform plan && terraform apply
+
+after verify :-   terraform validate
+
+
+
+----------------------------------------------------Recipe 13:----------------------------------------------------------------
+
+
+Recipe 13: Creating and Deploying a Simple Infrastructure using Terraform
+Objective
+Deploy a simple AWS resource using Terraform.
+Assignment Task
+Create an AWS S3 bucket using Terraform.
+Guidelines / Steps
+1. Create a Terraform project directory.
+2. Define the AWS provider configuration.
+3. Define a resource block to create an S3 bucket.
+4. Run:
+terraform init
+5. Generate an execution plan:
+terraform plan
+6. Apply the configuration:
+terraform apply
+7. Verify in the AWS Console that the bucket is created.
+8. Destroy the resource using:
+terraform destroy
+Expected Outcome
+A new S3 bucket should be created and managed through Terraform.
+
+
+steps:-
+
+	create directory and enter:-
+	mkdir terraform-s3-demo
+	cd terraform-s3-demo
+	
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-myname-123456789"
+}
+
+
+run :-  terraform init && terraform plan && terraform apply  
+after verify created 
+
+after terraform destroy
+
+
+
+
+
+----------------------------------------------------Recipe 14:----------------------------------------------------------------
+
+Recipe 14: Managing Terraform State in a Team
+Objective
+Learn how Terraform state is managed for collaboration.
+Assignment Task
+Configure remote state storage using AWS S3.
+Guidelines / Steps
+1. Create an S3 bucket to store Terraform state.
+2. Enable versioning for the bucket.
+3. Update Terraform configuration to use a remote backend.
+4. Configure backend settings in Terraform.
+5. Reinitialize Terraform:
+terraform init
+6. Verify state file is stored in S3.
+7. Simulate a team workflow:
+o Clone the project in another directory
+o Run Terraform commands using the same backend.
+Expected Outcome
+Terraform state should be stored remotely and accessible to multiple users.
+
+
+steps:-  create first bucket main.f nd inside terraform folder create using backend.tf
+
+main.tf :-
+
+resource "aws_s3_bucket" "demo" {
+  bucket = "my-ipl-123"
+}
+
+first run :- terraform init && terraform plan && terraform apply 
+
+then verify bucket created
+
+
+then create backend.tf:-
+
+terraform {
+  backend "s3" {
+    bucket = "my-ipl-123"
+    key    = "terraform/state.tfstate"
+    region = "ap-south-1"
+  }
+}
+
+then run:- 
+first run :- terraform init && terraform plan && terraform apply 
+
+ask yes in init
+
+then check created inside bucket this folder
+
+after remove object from bucket then destroy
+
+
+----------------second way-----------------
+
+create simple file.txt in same folder and enter text 
+
+then this script run to create a bucket and also inclue this same file.txt inside bucket
+
+script main.tf:- 
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-ipl-1234"
+}
+
+resource "aws_s3_object" "file_upload" {
+  bucket = aws_s3_bucket.my_bucket.bucket
+  key    = "file.txt"
+  source = "file.txt"
+}
+
+
+run :-  terraform init && terraform plan && terraform apply 
+
+verify created successfully bucket inside file added 
+
+after remove file from bucekt then destroy
+
+run:- terraform destroy
+
+
+----------------------------------------------------Recipe 15:----------------------------------------------------------------
+
+
+
+Recipe 15: Provisioning a Virtual Machine using Terraform
+Objective
+Launch an EC2 instance using Terraform.
+Assignment Task
+Create an AWS EC2 instance.
+Guidelines / Steps
+1. Create a Terraform configuration file.
+2. Define the AWS provider.
+3. Define an EC2 resource block.
+4. Specify:
+o AMI ID
+o Instance type
+o Key pair
+5. Run:
+terraform init
+6. Run:
+terraform plan
+7. Deploy the infrastructure:
+terraform apply
+8. Verify instance creation in AWS Console.
+9. Terminate the instance using Terraform.
+Expected Outcome
+A running EC2 instance managed by Terraform.
+
+
+
+steps:- first create a defualt vpc,
+		then ami id find into ec2 -> launach instance -> scroll up and find ubuntu/linux ami id and copy 
+		instance type t3.micro
+		then create .pem file -> go to ec2 and dashboard ->keypairs and create and give name and downlaod
+		and this move into same folder
+		
+		
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "my_ec2" {
+  ami           = "ami-048f4445314bcaa09"  #change this
+  instance_type = "t3.micro"
+
+  key_name = "hello"	#hange name to file 
+}
+
+
+
+
+run:- terraform init && terraform plan && terraform apply 
+
+verify instance created
+
+then:- terraform destroy
+
+
+
+move ssh key in other folder or other drive then run use location in ssh this path where store :--  ssh -i D:\devops\devops\hello.pem ec2-user@13.206.86.21
+
+
+then give permissions:-
+icacls "D:\devops\devops\hello.pem" /inheritance:r
+icacls "D:\devops\devops\hello.pem" /remove "BUILTIN\Users"
+icacls "D:\devops\devops\hello.pem" /grant:r %username%:R
+icacls "D:\devops\devops\hello.pem" /inheritance:r /grant:r %username%:R
+
+entered in virtual machine
+
+
+
+
+
+
+
+
+
+----------------------------------------------------Recipe 16:----------------------------------------------------------------
+
+Recipe 16: Provisioning a Web Server using Terraform
+Objective
+Deploy a web server on an EC2 instance.
+Assignment Task
+
+Create an EC2 instance and configure Apache or Nginx web server.
+Guidelines / Steps
+1. Create Terraform configuration for EC2.
+2. Configure Security Groups to allow:
+o SSH (port 22)
+o HTTP (port 80)
+3. Add user_data script to install a web server.
+4. Initialize Terraform.
+5. Deploy the infrastructure.
+6. Obtain the public IP address of the instance.
+7. Access the web server using a browser.
+Expected Outcome
+A working web server accessible through a public IP.
+
+
+
+
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+
+  vpc_security_group_ids = ["sg-010bef2d4f3caa613"]
+
+  user_data = <<-EOF
+#!/bin/bash
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+EOF
+
+}
+
+
+run:- terraform init && terraform plan && terraform apply 
+
+verify instance created
+
+after create click instance on security and edit inbound role  add http send enywhere ipv4 and same as ssh after save role
+
+then copy ipv4 and paste in new tab and remove https to http remove s otherwise not work.
+
+run:- terraform destroy
+
+
+
+
+----------------------------------------------------Recipe 17:----------------------------------------------------------------
+
+
+Recipe 17: Provisioning a Database using Terraform
+Objective
+Deploy a managed database using AWS.
+Assignment Task
+Create an Amazon RDS database instance.
+Guidelines / Steps
+1. Define the AWS provider.
+2. Create a Terraform resource for RDS instance.
+3. Configure parameters:
+o Database engine
+o Instance class
+o Storage
+o Username and password
+4. Configure security groups for database access.
+5. Initialize Terraform.
+6. Deploy the infrastructure.
+7. Verify database creation in AWS.
+Expected Outcome
+A running RDS database instance.
+
+
+
+
+main.tf:-
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_db_instance" "database" {
+  allocated_storage    = 20
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+
+  db_name              = "terraformdb"
+  username             = "admin"
+  password             = "Password123"
+
+  skip_final_snapshot  = true
+  publicly_accessible  = true
+
+  vpc_security_group_ids = ["sg-003ec3783a3bb4ce0"]  #change your security group name 
+  db_subnet_group_name = "hello" 
+}
+
+
+run:- terraform init && terraform plan && terraform apply 
+
+verify database created
+
+then, edit inbound rule for mysql 3306 add 
+
+then if mysql not installed so xampp start then go to xampp folder htdocs or for mysql  this type and open cmd and check mysql --version 
+
+
+-------------------------for mysql verify----------------------------
+its ok then run :-
+
+copy after terraform from database after all avlues 
+
+mysql -h terraform-20260411152650689800000001.c3u0uk8ea9jq.ap-south-1.rds.amazonaws.com -P 3306 -u admin -p
+
+after ask for password:- then enter same as script
+
+
+
+
+---------------------------for xampp verify--------------------------:-
+
+or verify so go to xampp under httpdoc create test.php
+then :-
+
+
+test.php
+
+
+<?php
+$conn = new mysqli("terraform-20260423182022960200000001.c3u0uk8ea9jq.ap-south-1.rds.amazonaws.com",
+"admin",
+"Password123",
+"terraformdb");
+
+if ($conn->connect_error) {
+    echo "Failed";
+} else {
+    echo "Connected";
+}
+?>
+
+
+
+link provide under rds:- terraform-2026......copy from second line 
+
+then same as user and pass and db
+
+written in php code
+
+
+then run:-
+
+http://localhost/test.php
+
+
+it show connected...
+
+
+and then successfully login done !!!
+
+then:- terrform destroy 
+
+
+
+----------------------------------------------------Recipe 18:----------------------------------------------------------------
+
+Recipe 18: Deploying a Web Application using Terraform
+Objective
+Deploy a simple web application architecture.
+Assignment Task
+Deploy a web application using EC2 and RDS.
+Guidelines / Steps
+1. Create a VPC (optional but recommended).
+2. Create:
+o EC2 instance (web server)
+o RDS instance (database)
+3. Configure security groups to allow communication.
+4. Add user data to configure the application environment.
+5. Deploy using Terraform.
+
+6. Verify connectivity between web server and database.
+Expected Outcome
+A functional web application infrastructure.
+
+
+ans :-
+
+ensure default vpc created 
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+
+resource "aws_db_instance" "database" {
+  allocated_storage    = 5
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+
+  db_name              = "terraformdb"
+  username             = "admin"
+  password             = "Password123"
+
+  skip_final_snapshot  = true
+  publicly_accessible  = true
+
+  vpc_security_group_ids = ["sg-0fd138f20079244fe"]
+  db_subnet_group_name = "demo-rds"     # make this name accroding to you go first aurora and rds-> subnet group -> create a new ->then give name and description select atleast 2 vpc and check all and also select zone like ap-south-1a and b  then save 
+}
+
+
+resource "aws_instance" "web" {
+
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+
+  vpc_security_group_ids = ["sg-010bef2d4f3caa613"]
+
+  user_data = <<-EOF
+#!/bin/bash
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>HII</h1>" > /var/www/html/index.html
+EOF
+
+}
+
+
+wait until 5 min
+
+start xampp services
+
+in aws then show in aurora and ec2 created successfully
+
+
+for verify so go to xampp under httpdoc create test.php
+then :-
+
+
+test.php
+
+
+<?php
+$conn = new mysqli("terraform-20260423182022960200000001.c3u0uk8ea9jq.ap-south-1.rds.amazonaws.com",
+"admin",
+"Password123",
+"terraformdb");
+
+if ($conn->connect_error) {
+    echo "Failed";
+} else {
+    echo "Connected";
+}
+?>
+
+
+
+link provide under rds:- terraform-2026......copy from second line 
+
+then same as user and pass and db
+
+written in php code
+
+
+then run:-
+
+http://localhost/test.php
+
+
+it show connected...
+
+
+
+
+
+
+
+----------------------------------------------------Recipe 19:----------------------------------------------------------------
+
+
+Recipe 19: Managing Infrastructure Changes using Terraform
+Objective
+Understand how Terraform tracks and applies infrastructure changes.
+Assignment Task
+Modify an existing infrastructure resource.
+Guidelines / Steps
+1. Use an existing Terraform project.
+2. Change configuration parameters such as:
+o EC2 instance type
+o Tags
+3. Run:
+terraform plan
+4. Observe proposed changes.
+5. Apply the changes:
+terraform apply
+6. Verify updates in AWS Console.
+Expected Outcome
+Infrastructure should update without manual intervention.
+
+
+ans :-
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0e12ffc2dd465f6e4"
+  instance_type = "t3.micro"
+}
+
+
+
+create simple instance then run init plan nd apply
+
+then changes is script like tag add and change micro to small
+
+
+changed :-
+
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0e12ffc2dd465f6e4"
+  instance_type = "t3.small"
+
+  tags = {
+    Name = "DemoServer"
+  }
+}
+
+
+after int plan and apply 
+
+and verify done....
+
+
+
+
+----------------------------------------------------Recipe 20:----------------------------------------------------------------
+
+Recipe 20: Using Terraform to Configure Load Balancers
+Objective
+Deploy an AWS load balancer.
+Assignment Task
+Create an Application Load Balancer (ALB) to distribute traffic across EC2 instances.
+Guidelines / Steps
+1. Create multiple EC2 instances.
+2. Define a load balancer resource.
+3. Create:
+o Target groups
+o Listener configuration
+4. Attach EC2 instances to the target group.
+5. Deploy infrastructure.
+6. Test load balancing using browser requests.
+Expected Outcome
+Traffic should be distributed across multiple instances.
+
+
+--first way use in exam ----
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# ---------------- VPC ----------------
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+# ---------------- Subnets ----------------
+resource "aws_subnet" "subnet1" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-south-1a"
+  map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "subnet2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "ap-south-1b"
+  map_public_ip_on_launch = true
+}
+
+# ---------------- Internet Gateway ----------------
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+}
+
+# ---------------- Route Table ----------------
+resource "aws_route_table" "rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+}
+
+resource "aws_route_table_association" "a1" {
+  subnet_id      = aws_subnet.subnet1.id
+  route_table_id = aws_route_table.rt.id
+}
+
+resource "aws_route_table_association" "a2" {
+  subnet_id      = aws_subnet.subnet2.id
+  route_table_id = aws_route_table.rt.id
+}
+
+# ---------------- Security Group ----------------
+resource "aws_security_group" "sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ---------------- EC2 Instance 1 ----------------
+resource "aws_instance" "web1" {
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.subnet1.id
+
+  vpc_security_group_ids = [aws_security_group.sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              echo "Server 1 Running" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "Web-Server-1"
+  }
+}
+
+# ---------------- EC2 Instance 2 ----------------
+resource "aws_instance" "web2" {
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.subnet2.id
+
+  vpc_security_group_ids = [aws_security_group.sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              echo "Server 2 Running" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "Web-Server-2"
+  }
+}
+
+# ---------------- EC2 Instance 3 ----------------
+resource "aws_instance" "web3" {
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.subnet2.id
+
+  vpc_security_group_ids = [aws_security_group.sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              echo "Server 3 Running" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "Web-Server-3"
+  }
+}
+
+# ---------------- Application Load Balancer ----------------
+resource "aws_lb" "alb" {
+  name               = "my-alb"
+  load_balancer_type = "application"
+
+  subnets         = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
+  security_groups = [aws_security_group.sg.id]
+}
+
+# ---------------- Target Group ----------------
+resource "aws_lb_target_group" "tg" {
+  name     = "my-target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path = "/"
+    port = "80"
+  }
+}
+
+# ---------------- Listener ----------------
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# ---------------- Attach EC2 to Target Group ----------------
+resource "aws_lb_target_group_attachment" "t1" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web1.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "t2" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web2.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "t3" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web3.id
+  port             = 80
+}
+
+# ---------------- Output ----------------
+output "alb_dns" {
+  value = aws_lb.alb.dns_name
+}
+
+
+
+
+
+-------------------------second way--------------------
+
+provider "aws" {
+    region = "ap-south-1"
+}
+
+
+
+resource "aws_security_group" "lb_sg" {
+    name = "lb-security-group"
+
+    ingress {
+        from_port   = 80
+        to_port     = 80
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+
+data "aws_vpc" "default" {
+    default = true
+}
+
+data "aws_subnets" "default" {}
+
+
+resource "aws_instance"  "server1" {
+    ami             = "ami-0e12ffc2dd465f6e4"
+    instance_type   = "t3.micro"
+    key_name        = "my-key"
+
+    security_groups = ["sg-03184dd31cbf02ca3"]
+
+    user_data   =   <<-EOF
+                    #!/bin/bash
+                    yum update  -y
+                    yum install httpd -y 
+                    echo "Server 1 Running" > /var/www/html/index.html
+                    systemctl start httpd
+                    systemctl enable httpd
+                    EOF
+    
+    tags = {
+        Name = "Server-1"
+    }
+}
+
+resource "aws_instance"  "server2" {
+    ami             = "ami-0e12ffc2dd465f6e4"
+    instance_type   = "t3.micro"
+    key_name        = "my-key"
+
+    security_groups = ["sg-03184dd31cbf02ca3"]
+
+    user_data   =   <<-EOF
+                    #!/bin/bash
+                    yum update  -y
+                    yum install httpd -y 
+                    echo "Server 2 Running" > /var/www/html/index.html
+                    systemctl start httpd
+                    systemctl enable httpd
+                    EOF
+    
+    tags = {
+        Name = "Server-2"
+    }
+}
+
+resource "aws_lb" "my_lb" {
+    name                = "my-load-balancer"
+    internal            = false
+    load_balancer_type  = "application"
+
+    security_groups = [sg-03184dd31cbf02ca3]
+    subnets         = data.aws_subnets.default.ids
+
+    tags = {
+        Name = "My_Load_Balancer"
+    }
+}
+
+
+resource "aws_lb_target_group" "tg" {
+    name        = "my-target-group"
+    port        = 80
+    protocol    = "HTTP"
+    vpc_id      = data.aws_vpc.default.id
+
+    health_check {
+        path    = "/"
+        port    = "80"
+    }
+
+    tags = {
+        Name = "Target-Group"
+    }
+}
+
+
+resource "aws_lb_target_group_attachment" "server1_attach" {
+
+    target_group_arn    = aws_lb_target_group.tg.arn
+    target_id           = aws_instance.server1.id
+    port                = 80
+}
+
+resource "aws_lb_target_group_attachment" "server2_attach" {
+
+    target_group_arn    = aws_lb_target_group.tg.arn
+    target_id           = aws_instance.server2.id
+    port                = 80
+}
+resource "aws_lb_listener" "listener" {
+
+    load_balancer_arn   = aws_lb.my_lb.arn
+    port                = 80
+    protocol            = "HTTP"
+
+    default_action {
+        type                = "forward"
+        target_group_arn    = aws_lb_target_group.tg.arn
+    }
+}
+
+output "load_balancer_dns" {
+    value = aws_lb.my_lb.dns_name
+} 
+
+
+
+
+
+
+
+----------------------------------------------------Recipe 21:----------------------------------------------------------------
+
+
+Recipe 21: Managing Infrastructure Dependencies with Terraform 
+Objective 
+Understand resource dependencies in Terraform. 
+Assignment Task 
+Create infrastructure with dependent resources. 
+Guidelines / Steps 
+1. Create resources such as: 
+o VPC 
+o Subnet 
+o EC2 instance 
+2. Use implicit or explicit dependencies. 
+3. Configure Terraform resource relationships. 
+4. Run: 
+terraform plan 
+5. Apply configuration. 
+6. Verify creation order of resources. 
+Expected Outcome 
+Resources should be created in the correct order.
+
+
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# ---------------- VPC ----------------
+resource "aws_vpc" "v" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "VPC"
+  }
+}
+
+# ---------------- Subnet ----------------
+resource "aws_subnet" "s" {
+  vpc_id     = aws_vpc.v.id   #  Implicit dependency (uses VPC ID)
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "Subnet"
+  }
+}
+
+# ---------------- Security Group ----------------
+resource "aws_security_group" "sg" {
+  vpc_id = aws_vpc.v.id
+
+  depends_on = [aws_vpc.v]   #  Explicit dependency (manual control)
+
+  tags = {
+    Name = "SG"
+  }
+}
+
+# ---------------- EC2 ----------------
+resource "aws_instance" "ec2" {
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+
+  subnet_id              = aws_subnet.s.id   # Implicit dependency (Subnet)
+  vpc_security_group_ids = [aws_security_group.sg.id]  #  Implicit dependency (SG)
+
+  tags = {
+    Name = "EC2"
+  }
+}
+
+
+
+
+workflow how work:-
+
+1. Create VPC
+      ↓
+2. Create Subnet (needs VPC)
+      ↓
+3. Create Security Group (needs VPC)
+      ↓
+4. Create EC2 (needs Subnet + SG)
+
+
+----------------------------------------------------Recipe 22:----------------------------------------------------------------
+
+
+
+
+Recipe 22: Using Terraform for Zero-Downtime Deployment 
+Objective 
+Update infrastructure without service interruption. 
+Assignment Task 
+Implement a rolling update strategy for EC2 instances. 
+Guidelines / Steps 
+1. Create multiple EC2 instances behind a load balancer. 
+2. Modify instance configuration (example: new AMI). 
+3. Configure lifecycle rules in Terraform. 
+4. Apply changes using Terraform. 
+5. Observe how instances are replaced gradually. 
+Expected Outcome 
+Infrastructure updates should not interrupt service availability
+
+-----simple way------
+
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "ec2" {
+  count         = 2
+  ami           = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "Web-${count.index}"
+  }
+}
+
+
+
+
+
+-----------------------as per question way-------------
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# ---------------- Load Balancer ----------------
+resource "aws_lb" "alb" {
+  name               = "alb-zd"
+  load_balancer_type = "application"
+
+ 
+    subnets = [
+    "subnet-0e6b911e553a797f4",
+    "subnet-03cb6982dd2d426a3"
+  ]
+
+  security_groups = ["sg-010bef2d4f3caa613"]      
+}
+
+# ---------------- Target Group ----------------
+resource "aws_lb_target_group" "tg" {
+  name     = "tg-zd"
+  port     = 80
+  protocol = "HTTP"
+
+  vpc_id = "vpc-09c11714eece4c959"
+}
+
+# ---------------- EC2 (Rolling Update) ----------------
+resource "aws_instance" "ec2" {
+  count         = 2
+  ami           = "ami-014c2b7a6126719e9" 
+
+#once create then update ami id means create new under ec2 AMI THEN replcae ami id then run again so flow is add first->then destroy after add so all traffic goes to new and old is free
+
+
+  instance_type = "t3.micro"
+
+  subnet_id              = "subnet-0e6b911e553a797f4"   
+  vpc_security_group_ids = ["sg-010bef2d4f3caa613"]     
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "Web-${count.index}"
+  }
+}
+
+# ---------------- Attach EC2 ----------------
+resource "aws_lb_target_group_attachment" "attach" {
+  count            = 2
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.ec2[count.index].id
+  port             = 80
+}
+
+
+how work zero downtime:-
+
+Step 1: Old EC2 running (2 instances)
+Step 2: New EC2 created (same time)
+Step 3: New EC2 attached to ALB
+Step 4: Old EC2 removed
+
+
+with out life cycle:- its work like destroy old -> then create new
+with life cycle :- its work new create first -> then add to load balancer -> then remove old
+
+----------------------------------------------------Recipe 23:----------------------------------------------------------------
+
+
+Recipe 23: Scaling Infrastructure using Terraform 
+Objective 
+Automatically scale infrastructure resources. 
+Assignment Task 
+Implement Auto Scaling for EC2 instances. 
+Guidelines / Steps 
+1. Create a launch template or launch configuration. 
+2. Configure an Auto Scaling Group. 
+3. Define scaling policies. 
+4. Attach the Auto Scaling Group to a load balancer. 
+5. Deploy infrastructure using Terraform. 
+6. Simulate increased load conditions. 
+7. Monitor scaling behavior in AWS. 
+Expected Outcome 
+EC2 instances should automatically scale based on load conditions.
+
+
+
+main.tf:-
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_launch_template" "web_template" {
+  name_prefix   = "web-lt"
+  image_id      = "ami-01b40e1bcccae197a"
+  instance_type = "t3.micro"
+}
+
+resource "aws_autoscaling_group" "web_asg" {
+
+  desired_capacity = 2
+  min_size         = 1
+  max_size         = 4
+
+  vpc_zone_identifier = [
+    "subnet-0e6b911e553a797f4",ye
+    "subnet-03cb6982dd2d426a3"
+  ]
+
+  launch_template {
+    id      = aws_launch_template.web_template.id
+    version = "$Latest"
+  }
+}
+
+
+
+workflow:-
+
+Terraform apply
+        ↓
+ASG creates 2 EC2 instances (desired=2)
+        ↓
+Monitors load automatically
+        ↓
+If load increases → adds EC2 (max 4)
+        ↓
+If load decreases → removes EC2 (min 1)
+
+
+
+
+
+
+EXTRA:---
+
+----------------------------------------------VPC, SUBNET, SECURITY GROUP MAKING USING SCRIPT-----------------------------------------------
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# ---------------- VPC ----------------
+resource "aws_vpc" "my_vpc" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "Custom-VPC"
+  }
+}
+
+# ---------------- Subnet ----------------
+resource "aws_subnet" "my_subnet" {
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "ap-south-1a"
+
+  tags = {
+    Name = "Custom-Subnet"
+  }
+}
+
+# ---------------- Security Group ----------------
+resource "aws_security_group" "my_sg" {
+  name   = "my-sg"
+  vpc_id = aws_vpc.my_vpc.id
+
+  tags = {
+    Name = "Custom-SG"
+  }
+}
